@@ -1,0 +1,107 @@
+#Coworking Space
+The Coworking Space Service is a set of APIs that enables users to request one-time tokens and administrators to authorize access to a coworking space. This service follows a microservice pattern and the APIs are split into distinct services that can be deployed and managed independently of one another.
+
+For this project, you are a DevOps engineer who will be collaborating with a team that is building an API for business analysts. The API provides business analysts basic analytics data on user activity in the service. The application they provide you functions as expected locally and you are expected to help build a pipeline to deploy it in Kubernetes.
+
+###Setup
+#### Setup Postgres database
+Find the yml file in db folder and run the following commands
+
+```bash
+- kubectl apply -f pvc.yaml
+- kubectl apply -f pv.yaml
+- kubectl apply -f postgresql-deployment.yaml
+`
+Connecting to postgress Via Port Forwarding
+```bash
+kubectl port-forward --namespace default svc/<SERVICE_NAME>-postgresql 5432:5432 &
+    PGPASSWORD="$POSTGRES_PASSWORD" psql --host 127.0.0.1 -U postgres -d postgres -p 5432
+`
+####Run Seed Files
+
+#install psql on your workspace
+```bash
+apt update
+apt install postgresql postgresql-contrib
+`
+run the seed files in db/ in order to create the tables and populate them with data.
+export DB_PASSWORD=mypassword
+PGPASSWORD="$DB_PASSWORD" psql --host 127.0.0.1 -U myuser -d mydatabase -p 5433 < <FILE_NAME.sql>
+
+kubectl port-forward --namespace default svc/<SERVICE_NAME>-postgresql 5432:5432 &
+    PGPASSWORD="$POSTGRES_PASSWORD" psql --host 127.0.0.1 -U postgres -d postgres -p 5432 < <FILE_NAME.sql>
+
+##Checking the tables
+```bash
+PGPASSWORD="$DB_PASSWORD" psql --host 127.0.0.1 -U myuser -d mydatabase -p 5433
+`
+install Dependencies and Run python app.py
+```bash
+apt update
+apt install build-essential libpq-dev
+pip install --upgrade pip setuptools wheel
+pip install -r requirements.txt
+`
+To run the application, you need to set several environment variables. These can be set per session with export KEY=VAL or prepended to your command. The variables are:
+```bash
+DB_USERNAME
+DB_PASSWORD
+DB_HOST (default: 127.0.0.1)
+DB_PORT (default: 5432)
+DB_NAME (default: postgres)
+
+To prepend them to your command, use the following format:
+
+DB_USERNAME=username DB_PASSWORD=password python app.py
+`
+#Verifying The Application
+```bash
+Generate report for check-ins grouped by dates curl <BASE_URL>/api/reports/daily_usage
+
+Generate report for check-ins grouped by users curl <BASE_URL>/api/reports/user_visits
+`
+Create a Dockerfile for the Python application in analytics/.
+Use a Python Docker image (slim version) for FROM.
+Add -y to apt commands.
+Build and test your Docker image:
+```bash
+docker build -t test-coworking-analytics .
+docker run --network="host" test-coworking-analytics
+`
+
+### Deploy Application
+```bash
+kubectl get svc
+kubectl get pods
+`
+Deployment: Create a deployment YAML file to deploy the Docker image from your ECR repository to your Kubernetes network. Reference ConfigMap and Secret in the Deployment manifest file using env or envFrom.
+## Create a service and deployment using Kubernetes configuration files to deploy the application.
+
+1. **ConfigMap**: Create a ConfigMap for plaintext variables (DB_HOST, DB_USERNAME, DB_PORT, DB_NAME). DB_HOST is the service name from `kubectl get svc`. DB_PORT is `5432`.
+2. **Secret**: Store sensitive variables (DB_PASSWORD) in a Secret.
+3. **Deployment**: Create a deployment YAML file to deploy the Docker image from your ECR repository to your Kubernetes network. Reference ConfigMap and Secret in the Deployment manifest file using `env` or `envFrom`.
+
+
+
+#### Deploy the Analytics Application
+- set up Docker login (aws ecr get-login-password)
+- Create an Amazon ECR repository.
+- Set up an Amazon CodeBuild project linked to your GitHub repo.
+- Create a buildspec.yaml file to trigger on repo updates. 
+- Build the app (docker build)
+- Push the image to ECR (docker push)
+- Add environment variables in AWS console.
+- Update IAM role permissions for CodeBuild to access ECR.
+- Verify by clicking "Start Build" in CodeBuild console and check ECR for the Docker image.
+- Create a service and deployment using Kubernetes configuration files to deploy the application.
+- setup cloudwatch
+
+
+
+
+
+
+
+
+## CloudWatch
+Set up CloudWatch logging using the Container Insights feature. Refer to the Operationalizing Kubernetes lesson for setup instructions.
